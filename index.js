@@ -15,7 +15,6 @@ app.post("/webhook", async (req, res) => {
     const userMessage = msg.text;
 
     try {
-        // === NEW OPENAI FORMAT 2025 ===
         const ai = await axios.post(
             "https://api.openai.com/v1/responses",
             {
@@ -55,7 +54,6 @@ app.post("/webhook", async (req, res) => {
     res.sendStatus(200);
 });
 
-// START SERVER
 app.listen(10000, () => {
     console.log("Bot server is running...");
 });
