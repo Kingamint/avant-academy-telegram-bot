@@ -14,18 +14,16 @@ app.post("/webhook", async (req, res) => {
   const userMessage = msg.text;
 
   try {
-    // Hantar ke OpenAI (chat completions)
-    const completion = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
+    // === AI REQUEST (with system prompt) ===
+    const ai = await axios.post(
+      "https://api.openai.com/v1/responses",
       {
         model: "gpt-4.1-mini",
-        messages: [
+        input: [
           {
-        
-             role: "system",
-content:
-  "You are AvantAcademyAI, an English-speaking assistant for forex traders. Always reply in English only, no matter what language the user uses. Keep your answers short, clear, and focused on Avant Academy’s indicators and forex trading."
- 
+            role: "system",
+            content:
+              "You are AvantAcademyAI, an English-speaking forex assistant. ALWAYS respond in English only. Never use Malay or Indonesian. Keep replies short, clear, and focused on trading and Avant Academy indicators."
           },
           {
             role: "user",
@@ -41,33 +39,28 @@ content:
       }
     );
 
-    const aiReply =
-      completion.data.choices?.[0]?.message?.content?.trim() ||
-      "Sorry, I couldn't generate a response.";
-
-    // Reply balik ke Telegram
-    await axios.post(
-      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
-      {
-        chat_id: msg.chat.id,
-        text: aiReply
-      }
-    );
-  } catch (error) {
-    console.error("AI Error:", error.response?.data || error.message);
+    const reply = ai.data.output_text;
 
     await axios.post(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
       {
         chat_id: msg.chat.id,
-        text: "Error talking to AI. Please try again."
+        text: reply
       }
     );
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("AI Error:", err?.response?.data || err);
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+      {
+        chat_id: msg.chat.id,
+        text: "Sorry, I couldn't generate a response."
+      }
+    );
+    res.sendStatus(200);
   }
-
-  res.sendStatus(200);
 });
 
-app.listen(10000, () => {
-  console.log("Bot server is running...");
-});
+app.listen(10000, () => console.log("Bot server is running..."));
