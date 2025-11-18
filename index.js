@@ -1,3 +1,4 @@
+
 import express from "express";
 import axios from "axios";
 
@@ -29,12 +30,34 @@ app.post("/webhook", async (req, res) => {
       }
     );
 
-    // Parse OpenAI reply
+    // OpenAI reply
     const aiReply =
       ai?.data?.output_text?.join("") ||
       ai?.data?.output_text ||
       "Sorry, I couldn't generate a response.";
 
-    // Send reply back to Telegram
+    // Send reply to Telegram
     await axios.post(
-      `https://api.te
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+      {
+        chat_id: msg.chat.id,
+        text: aiReply
+      }
+    );
+  } catch (error) {
+    console.error("AI Error:", error?.response?.data || error.message);
+
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+      {
+        chat_id: msg.chat.id,
+        text: "Error generating response. Please try again."
+      }
+    );
+  }
+
+  res.sendStatus(200);
+});
+
+// Start server
+app.listen(10000, () => console.log("Bot server is running..."));
