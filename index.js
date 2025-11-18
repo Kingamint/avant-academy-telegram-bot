@@ -6,54 +6,66 @@ app.use(express.json());
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_KEY;
-const AGENT_ID = process.env.AGENT_ID;
 
 app.post("/webhook", async (req, res) => {
-    const msg = req.body.message;
-    if (!msg || !msg.text) return res.sendStatus(200);
+  const msg = req.body.message;
+  if (!msg || !msg.text) return res.sendStatus(200);
 
-    const userMessage = msg.text;
+  const userMessage = msg.text;
 
-    try {
-        const ai = await axios.post(
-            "https://api.openai.com/v1/responses",
-            {
-                model: AGENT_ID,
-                input: userMessage
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${OPENAI_KEY}`,
-                    "Content-Type": "application/json"
-                }
-            }
-        );
+  try {
+    // Hantar ke OpenAI (chat completions)
+    const completion = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4.1-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are AvantAcademyAI, an assistant for forex traders. Jawab ringkas, jelas, dan fokus pada indicator Avant Academy."
+          },
+          {
+            role: "user",
+            content: userMessage
+          }
+        ]
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
 
-        const botReply = ai.data.output_text;
+    const aiReply =
+      completion.data.choices?.[0]?.message?.content?.trim() ||
+      "Sorry, I couldn't generate a response.";
 
-        await axios.post(
-            `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
-            {
-                chat_id: msg.chat.id,
-                text: botReply
-            }
-        );
+    // Reply balik ke Telegram
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+      {
+        chat_id: msg.chat.id,
+        text: aiReply
+      }
+    );
+  } catch (error) {
+    console.error("AI Error:", error.response?.data || error.message);
 
-    } catch (err) {
-        console.error("AI Error: ", err.response?.data || err.message);
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
+      {
+        chat_id: msg.chat.id,
+        text: "Error talking to AI. Please try again."
+      }
+    );
+  }
 
-        await axios.post(
-            `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
-            {
-                chat_id: msg.chat.id,
-                text: "Sorry, I couldn't generate a response."
-            }
-        );
-    }
-
-    res.sendStatus(200);
+  res.sendStatus(200);
 });
 
 app.listen(10000, () => {
-    console.log("Bot server is running...");
+  console.log("Bot server is running...");
 });
