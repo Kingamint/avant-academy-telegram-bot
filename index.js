@@ -21,9 +21,11 @@ app.post("/webhook", async (req, res) => {
         model: "gpt-4.1-mini",
         messages: [
           {
-            role: "system",
-            content:
-              "You are AvantAcademyAI, an assistant for forex traders. Jawab ringkas, jelas, dan fokus pada indicator Avant Academy."
+        
+             role: "system",
+content:
+  "You are AvantAcademyAI, an English-speaking assistant for forex traders. Always reply in English only, no matter what language the user uses. Keep your answers short, clear, and focused on Avant Academy’s indicators and forex trading."
+ 
           },
           {
             role: "user",
