@@ -8,14 +8,13 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const OPENAI_KEY = process.env.OPENAI_KEY;
 const AGENT_ID = process.env.AGENT_ID;
 
-app.post(`/webhook/${TELEGRAM_TOKEN}`, async (req, res) => {
+app.post("/webhook", async (req, res) => {
   const msg = req.body.message;
   if (!msg || !msg.text) return res.sendStatus(200);
 
   const userMessage = msg.text;
 
   try {
-    // Send user message to OpenAI Agent
     const ai = await axios.post(
       "https://api.openai.com/v1/responses",
       {
@@ -35,7 +34,6 @@ app.post(`/webhook/${TELEGRAM_TOKEN}`, async (req, res) => {
       ai?.data?.output_text ||
       "Sorry, I couldn't generate a response.";
 
-    // Send AI reply back to Telegram user
     await axios.post(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
       {
@@ -44,11 +42,10 @@ app.post(`/webhook/${TELEGRAM_TOKEN}`, async (req, res) => {
       }
     );
   } catch (error) {
-    console.error("AI Error:", error);
+    console.error("AI Error:", error?.response?.data || error.message);
   }
 
   res.sendStatus(200);
 });
 
-// Start server
 app.listen(10000, () => console.log("Bot server is running..."));
